@@ -8,7 +8,6 @@ import cPickle
 from twisted.internet import reactor, protocol
 from twisted.words.protocols import irc
 
-# simple 2nd-order markov model
 class Markov(object):
     def __init__(self, filename):
         try:
@@ -85,7 +84,6 @@ class Bot(irc.IRCClient):
         self.output = False
 
     def privmsg(self, user, channel, msg):
-#        print 'channel: `%s` user: `%s` msg: `%s`' % (user, channel, msg)
         if msg == '!enable':
             self.output = not self.output
             self.msg(channel, 'Output to channel: %s' % self.output)
@@ -144,7 +142,6 @@ class Bot(irc.IRCClient):
         words2 = set(words)
         words3 = words2 & self.nouns
         if len(words3) > 0:
-            #print "Nouns! " + str(words3)
             return list(words3)
         return words
 
