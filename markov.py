@@ -85,7 +85,8 @@ class Bot(irc.IRCClient):
 
     def joined(self, channel):
         print "Joined %s." % channel
-
+        self.msg(channel, 'Hello.')
+        
     def __init__(self):
         self.forward = Markov('markov.forward.pickle')
         self.reverse = Markov('markov.reverse.pickle')
@@ -181,7 +182,7 @@ if __name__ == "__main__":
 
     name = get_arg("--name", "mark_v_bot")
     channel = get_arg("--channel", "#dullbots")
-    server = get_arg("--server", "irc")
+    server = get_arg("--server", "irc.freenode.net")
     port = int(get_arg("--port", 6667))
 
     reactor.connectTCP(server, port, BotFactory(channel, name))
