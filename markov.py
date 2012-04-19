@@ -18,12 +18,6 @@ class Counter(dict):
     def __missing__(self, key):
         'Items not found have 0 count.'
         return 0
-            
-    def __getitem__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            return 0
 
     def __setitem__(self, key, value):
         self.total_count += value - self[key]
