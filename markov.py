@@ -164,11 +164,19 @@ class BotFactory(protocol.ClientFactory):
 
 if __name__ == "__main__":
     name = "jim"
-    channel = 'dullbots'
+    channel = '#dullbots'
     if "--name" in sys.argv:
-        name = sys.argv[sys.argv.index("--name") + 1]
+        try:
+            name = sys.argv[sys.argv.index("--name") + 1]
+        except:
+            print "Name argument is missing: --name <name>"
+            exit(-1)
     if "--channel" in sys.argv:
-        channel = sys.argv[sys.argv.index("--channel") + 1]
+        try:
+            channel = sys.argv[sys.argv.index("--channel") + 1]
+        except:
+            print "Channel argument is missing: --channel <channel>"
+            exit(-1)
 
-    reactor.connectTCP('irc', 6667, BotFactory('#' + channel, name))
+    reactor.connectTCP('irc', 6667, BotFactory(channel, name))
     reactor.run()
