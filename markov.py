@@ -79,8 +79,8 @@ class Bot(irc.IRCClient):
         print "Joined %s." % channel
 
     def __init__(self):
-        self.forward = Markov('jim.forward.pickle')
-        self.reverse = Markov('jim.reverse.pickle')
+        self.forward = Markov('%s.forward.pickle' % (self.nickname,))
+        self.reverse = Markov('%s.reverse.pickle' % (self.nickname,))
         self.load_nouns("nounlist.txt")
         self.output = False
 
@@ -92,8 +92,8 @@ class Bot(irc.IRCClient):
             return
 
         if msg == '!save':
-            self.forward.save('jim.forward.pickle')
-            self.reverse.save('jim.reverse.pickle')
+            self.forward.save('%s.forward.pickle' % (self.nickname,))
+            self.reverse.save('%s.reverse.pickle' % (self.nickname,))
             self.msg(channel, 'I feel like I have just taken the contents of my brain and put it on that disk.')
             return
 
@@ -151,7 +151,7 @@ class Bot(irc.IRCClient):
 class BotFactory(protocol.ClientFactory):
     protocol = Bot
 
-    def __init__(self, channel, nickname='jim'):
+    def __init__(self, channel, nickname='jimbot'):
         self.channel = channel
         self.nickname = nickname
 
@@ -163,7 +163,7 @@ class BotFactory(protocol.ClientFactory):
         print "Connection failed. Reason: %s" % reason
 
 if __name__ == "__main__":
-    name = "jim"
+    name = "jimbot"
     channel = '#dullbots'
     if "--name" in sys.argv:
         try:
