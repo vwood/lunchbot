@@ -163,20 +163,20 @@ class BotFactory(protocol.ClientFactory):
         print "Connection failed. Reason: %s" % reason
 
 if __name__ == "__main__":
-    name = "jimbot"
-    channel = '#dullbots'
-    if "--name" in sys.argv:
+    def get_arg(argname, default=None):
         try:
-            name = sys.argv[sys.argv.index("--name") + 1]
-        except:
-            print "Name argument is missing: --name <name>"
-            exit(-1)
-    if "--channel" in sys.argv:
-        try:
-            channel = sys.argv[sys.argv.index("--channel") + 1]
-        except:
-            print "Channel argument is missing: --channel <channel>"
+            if argname in sys.argv:
+                result = sys.argv[sys.argv.index(argname) + 1]
+                return result
+            return default
+        except IndexError:
+            print "Argument is missing: %s <option>" % (argname,)
             exit(-1)
 
-    reactor.connectTCP('irc', 6667, BotFactory(channel, name))
+    name = get_arg("--name", "jimbot")
+    channel = get_arg("--channel", "#dullbots")
+    server = get_arg("--server", "irc")
+    port = int(get_arg("--port", 6667))
+
+    reactor.connectTCP(server, port, BotFactory(channel, name))
     reactor.run()
