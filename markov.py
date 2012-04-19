@@ -8,6 +8,34 @@ import cPickle
 from twisted.internet import reactor, protocol
 from twisted.words.protocols import irc
 
+class Counter(dict):
+    """A stripped down version of collections.Counter for python 2.6 (since cygwin hasn't updated.)."""
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self)
+        self.total_count = 0
+        self.update(*args, **kwargs)
+
+    def __missing__(self, key):
+        'Items not found have 0 count.'
+        return 0
+            
+    def __getitem__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            return 0
+
+    def __setitem__(self, key, value):
+        self.total_count += value - self[key]
+        dict.__setitem__(self, key, value)
+
+    def total(self):
+        return self.total_count
+
+    def update(self, *args, **kwargs):
+        for k,v in dict(*args, **kwargs).iteritems():
+            self[k] = v
+
 class Markov(object):
     def __init__(self, filename):
         try:
@@ -22,13 +50,11 @@ class Markov(object):
         for i in xrange(0,len(xs) - 1):
             k = (xs[i],xs[i+1])
             if k not in self.model:
-                self.model[k] = {"~total": 0}
+                self.model[k] = Counter()
             if i < len(xs) - 2:
-                self.model[k][xs[i+2]] = self.model[k].get(xs[i+2], 0) + 1
-                self.model[k]["~total"] += 1
+                self.model[k][xs[i+2]] += 1
             else:
-                self.model[k][None] = self.model[k].get(None, 0) + 1
-                self.model[k]["~total"] += 1
+                self.model[k][None] += 1
 
     def seed(self, ys):
         return random.choice([x for x in self.model.keys() if x[0] in ys])
