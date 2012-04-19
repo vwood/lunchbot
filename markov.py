@@ -22,16 +22,24 @@ class Markov(object):
         for i in xrange(0,len(xs) - 1):
             k = (xs[i],xs[i+1])
             if k not in self.model:
-                self.model[k] = []
+                self.model[k] = {"~total": 0}
             if i < len(xs) - 2:
-                self.model[k] += [xs[i+2]]
+                self.model[k][xs[i+2]] = self.model[k].get(xs[i+2], 0) + 1
+                self.model[k]["~total"] += 1
             else:
-                self.model[k] += [None]
-            print '%s -> %s' % (k, self.model[k])
+                self.model[k][None] = self.model[k].get(None, 0) + 1
+                self.model[k]["~total"] += 1
 
     def seed(self, ys):
         return random.choice([x for x in self.model.keys() if x[0] in ys])
 
+    def random_select(self, key):
+        index = random.randint(0, self.model[key]["~total"] - 1)
+        for k, v in self.model[key].iteritems():
+            if v > index:
+                return k
+            index -= v
+            
     def emit(self, s):
         resp = []
         while s in self.model:
@@ -39,7 +47,7 @@ class Markov(object):
             if not len(ts):
                 break
             else:
-                t = random.choice(ts)
+                t = self.random_select(s)
                 if not t:
                     break
                 resp += [t]
@@ -48,8 +56,8 @@ class Markov(object):
 
 class BulkLoader(object):
     def __init__(self):
-        self.forward = Markov('jim.forward.pickle')
-        self.reverse = Markov('jim.reverse.pickle')
+        self.forward = Markov('markov.forward.pickle')
+        self.reverse = Markov('markov.reverse.pickle')
 
     def add(self, filename):
         for line in open(filename, 'r'):
@@ -62,10 +70,11 @@ class BulkLoader(object):
                 print 'Failed to learn %s' % line
 
     def save(self):
-        self.forward.save('jim.forward.pickle')
-        self.reverse.save('jim.reverse.pickle')
+        self.forward.save('markov.forward.pickle')
+        self.reverse.save('markov.reverse.pickle')
 
 class Bot(irc.IRCClient):
+    """A Markov Chain bot."""
     def _get_nickname(self):
         return self.factory.nickname
     nickname = property(_get_nickname)
@@ -78,8 +87,8 @@ class Bot(irc.IRCClient):
         print "Joined %s." % channel
 
     def __init__(self):
-        self.forward = Markov('%s.forward.pickle' % (self.nickname,))
-        self.reverse = Markov('%s.reverse.pickle' % (self.nickname,))
+        self.forward = Markov('markov.forward.pickle')
+        self.reverse = Markov('markov.reverse.pickle')
         self.load_nouns("nounlist.txt")
         self.output = False
 
@@ -90,9 +99,9 @@ class Bot(irc.IRCClient):
             return
 
         if msg == '!save':
-            self.forward.save('%s.forward.pickle' % (self.nickname,))
-            self.reverse.save('%s.reverse.pickle' % (self.nickname,))
-            self.msg(channel, 'I feel like I have just taken the contents of my brain and put it on that disk.')
+            self.forward.save('markov.forward.pickle')
+            self.reverse.save('markov.reverse.pickle')
+            self.msg(channel, 'I feel pickled.')
             return
 
         words = msg.split(' ')
@@ -147,7 +156,7 @@ class Bot(irc.IRCClient):
 
 class BotFactory(protocol.ClientFactory):
     protocol = Bot
-
+    
     def __init__(self, channel, nickname='jimbot'):
         self.channel = channel
         self.nickname = nickname
@@ -170,7 +179,7 @@ if __name__ == "__main__":
             print "Argument is missing: %s <option>" % (argname,)
             exit(-1)
 
-    name = get_arg("--name", "jimbot")
+    name = get_arg("--name", "mark_v_bot")
     channel = get_arg("--channel", "#dullbots")
     server = get_arg("--server", "irc")
     port = int(get_arg("--port", 6667))
