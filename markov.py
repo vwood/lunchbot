@@ -111,6 +111,7 @@ class Bot(irc.IRCClient):
         self.forward = Markov('markov.forward.pickle')
         self.reverse = Markov('markov.reverse.pickle')
         self.load_nouns("nounlist.txt")
+        self.load_text("seed.txt")
         self.output = False
 
     def privmsg(self, user, channel, msg):
@@ -126,21 +127,19 @@ class Bot(irc.IRCClient):
             return
 
         words = msg.split(' ')
+        self.learn(words)
 
-        if self.nickname in words[0]:
-            words = words[1:]
-        self.forward.learn(words)
-        self.reverse.learn([x for x in reversed(words)])
-
-        should_respond = 0.3;
+        should_respond = 0.3
         if self.nickname in msg:
             should_respond += 1
 
         words_pri = self.prioritise_words(words)
 
         if random.uniform(0,1) < should_respond:
+            print "Attempting to respond."
             resps = [x for x in [self.make_response(words_pri) for x in xrange(1,15)] if x]
             if not len(resps):
+                print "No possible responses."
                 return
 
             ideal_score = 0.8
@@ -153,6 +152,13 @@ class Bot(irc.IRCClient):
             resp = min(resps, key=lambda x: score(x, words_pri))
             self.msg(channel, ' '.join(resp))
 
+    def learn(self, words):
+        'Learns a list of words.'
+        if self.nickname in words[0]:
+            words = words[1:]
+        self.forward.learn(words)
+        self.reverse.learn([x for x in reversed(words)])
+            
     def make_response(self,words):
         try:
             s = self.forward.seed(words)
@@ -163,10 +169,21 @@ class Bot(irc.IRCClient):
         except:
             return None
 
+    def load_text(self, seedfile):
+        try:
+            for line in open(seedfile):
+                words = line.split(' ')
+                self.learn(words)
+        except IOError as e:
+            print "Can't load seedfile:", e
+
     def load_nouns(self, nounfile):
-        self.nouns = set()
-        for l in open(nounfile):
-            self.nouns.add(l.strip())
+        try:
+            self.nouns = set()
+            for l in open(nounfile):
+                self.nouns.add(l.strip())
+        except IOError as e:
+            print "Can't load nounfile:", e
 
     def prioritise_words(self, words):
         words2 = set(words)
@@ -178,7 +195,7 @@ class Bot(irc.IRCClient):
 class BotFactory(protocol.ClientFactory):
     protocol = Bot
     
-    def __init__(self, channel, nickname='jimbot'):
+    def __init__(self, channel, nickname):
         self.channel = channel
         self.nickname = nickname
 
@@ -204,6 +221,6 @@ if __name__ == "__main__":
     channel = get_arg("--channel", "#dullbots")
     server = get_arg("--server", "irc.freenode.net")
     port = int(get_arg("--port", 6667))
-
+    
     reactor.connectTCP(server, port, BotFactory(channel, name))
     reactor.run()
