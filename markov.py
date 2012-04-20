@@ -2,6 +2,7 @@
 
 """A really simple IRC bot."""
 
+import re
 import sys
 import random
 import cPickle
@@ -118,6 +119,9 @@ class Bot(irc.IRCClient):
         self.output = False
 
     def privmsg(self, user, channel, msg):
+        if 'bot' in user:
+            return
+        
         if msg == '!enable':
             self.output = not self.output
             self.msg(channel, 'Output to channel: %s' % self.output)
@@ -132,14 +136,14 @@ class Bot(irc.IRCClient):
         words = self.irc_to_list(msg)
         self.learn(words)
 
-        should_respond = 0.3
+        should_respond = 0.4
         if self.nickname in msg:
             should_respond += 1
 
         words_pri = self.prioritise_words(words)
 
         if random.uniform(0,1) < should_respond:
-            print "Attempting to respond."
+            print "Attempting to respond, using '%s'" % (", ".join(words_pri),)
             resps = [x for x in [self.make_response(words_pri) for x in xrange(1,15)] if x]
 
             if not len(resps):
@@ -157,20 +161,20 @@ class Bot(irc.IRCClient):
 
     def irc_to_list(self, msg):
         'Convert an irc message to a list of words.'
-        words = msg.split(' ')
-        if self.nickname in words[0]:
-            words = words[1:]
+        words = re.findall('([\/!\w\.]*[!\w\'\.]?[\w]+|,|:|\.|!|\'|\?)', msg)
+        if len(words) > 1 and words[1] in ':,':
+            words = words[2:]
         return words
                 
     def list_to_irc(self, words):
         'Convert a list of words to an irc message.'
-        return ' '.join(resp))
+        return ' '.join(words).replace(' ,', ',').replace(' ?','?').replace(' !','!').replace(' .', '.').replace(' :', ':')
     
     def learn(self, words):
         'Learns a list of words.'
         self.forward.learn(words)
         self.reverse.learn([x for x in reversed(words)])
-            
+
     def make_response(self,words):
         try:
             s = self.forward.seed(words)
@@ -185,7 +189,7 @@ class Bot(irc.IRCClient):
     def load_text(self, seedfile):
         try:
             for line in open(seedfile):
-                words = line.split(' ')
+                words = self.irc_to_list(line)
                 self.learn(words)
             print "Loaded seedfile:", seedfile
         except IOError as e:
