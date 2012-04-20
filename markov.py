@@ -130,6 +130,9 @@ class Bot(irc.IRCClient):
             return
 
         words = msg.split(' ')
+        if self.nickname in words[0]:
+            words = words[1:]
+
         self.learn(words)
 
         should_respond = 0.3
@@ -157,8 +160,6 @@ class Bot(irc.IRCClient):
 
     def learn(self, words):
         'Learns a list of words.'
-        if self.nickname in words[0]:
-            words = words[1:]
         self.forward.learn(words)
         self.reverse.learn([x for x in reversed(words)])
             
