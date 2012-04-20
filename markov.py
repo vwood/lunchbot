@@ -140,22 +140,20 @@ class Bot(irc.IRCClient):
             should_respond += 1
 
         words_pri = self.prioritise_words(words)
-        print words_pri
 
         if random.uniform(0,1) < should_respond:
             print "Attempting to respond."
             resps = [x for x in [self.make_response(words_pri) for x in xrange(1,15)] if x]
-            print resps
+
             if not len(resps):
                 print "No possible responses."
                 return
 
             ideal_score = 0.8
-            def score(r,w):
-                print " ".join(r),
-                r = list(set(r) & self.nouns)
+            def score(response,w):
+                r = list(set(response) & self.nouns)
                 s = abs( len([x for x in r if x in w]) / ( len(r) + 0.1 ) - ideal_score )
-                print " scores " + str(s)
+                print str(s), ":", " ".join(response)
                 return s
             resp = min(resps, key=lambda x: score(x, words_pri))
             self.msg(channel, ' '.join(resp))
