@@ -32,8 +32,10 @@ class Counter(dict):
 
 class Markov(object):
     def __init__(self, filename):
+        self.loaded_pickle = False
         try:
             self.model = cPickle.load(open(filename, 'rb'))
+            self.loaded_pickle = True
         except:
             self.model = {}
 
@@ -111,7 +113,8 @@ class Bot(irc.IRCClient):
         self.forward = Markov('markov.forward.pickle')
         self.reverse = Markov('markov.reverse.pickle')
         self.load_nouns("nounlist.txt")
-        self.load_text("seed.txt")
+        if not self.forward.loaded_pickle and not self.reverse.loaded_pickle:
+            self.load_text("seed.txt")
         self.output = False
 
     def privmsg(self, user, channel, msg):
