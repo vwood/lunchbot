@@ -56,7 +56,7 @@ class Markov(object):
         return random.choice([x for x in self.model.keys() if x[0] in ys])
 
     def random_select(self, key):
-        index = random.randint(0, self.model[key]["~total"] - 1)
+        index = random.randint(0, self.model[key].total() - 1)
         for k, v in self.model[key].iteritems():
             if v > index:
                 return k
@@ -140,10 +140,12 @@ class Bot(irc.IRCClient):
             should_respond += 1
 
         words_pri = self.prioritise_words(words)
+        print words_pri
 
         if random.uniform(0,1) < should_respond:
             print "Attempting to respond."
             resps = [x for x in [self.make_response(words_pri) for x in xrange(1,15)] if x]
+            print resps
             if not len(resps):
                 print "No possible responses."
                 return
@@ -170,7 +172,8 @@ class Bot(irc.IRCClient):
             rev.reverse()
             fwd = self.forward.emit(s)
             return rev + [s[0],s[1]] + fwd
-        except:
+        except Exception as e:
+            print "Can't respond: ", e
             return None
 
     def load_text(self, seedfile):
@@ -178,6 +181,7 @@ class Bot(irc.IRCClient):
             for line in open(seedfile):
                 words = line.split(' ')
                 self.learn(words)
+            print "Loaded seedfile:", seedfile
         except IOError as e:
             print "Can't load seedfile:", e
 
