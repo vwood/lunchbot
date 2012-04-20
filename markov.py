@@ -129,10 +129,7 @@ class Bot(irc.IRCClient):
             self.msg(channel, 'I feel pickled.')
             return
 
-        words = msg.split(' ')
-        if self.nickname in words[0]:
-            words = words[1:]
-
+        words = self.irc_to_list(msg)
         self.learn(words)
 
         should_respond = 0.3
@@ -156,8 +153,19 @@ class Bot(irc.IRCClient):
                 print str(s), ":", " ".join(response)
                 return s
             resp = min(resps, key=lambda x: score(x, words_pri))
-            self.msg(channel, ' '.join(resp))
+            self.msg(channel, self.list_to_irc(resp))
 
+    def irc_to_list(self, msg):
+        'Convert an irc message to a list of words.'
+        words = msg.split(' ')
+        if self.nickname in words[0]:
+            words = words[1:]
+        return words
+                
+    def list_to_irc(self, words):
+        'Convert a list of words to an irc message.'
+        return ' '.join(resp))
+    
     def learn(self, words):
         'Learns a list of words.'
         self.forward.learn(words)
